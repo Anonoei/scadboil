@@ -1,51 +1,44 @@
 import argparse
 import pathlib
 import os
+import subprocess
 
-ROOT = pathlib.Path(__file__).parent
-projects = ["all"]
-for file in ROOT.iterdir():
-    if file.name in (".git", "lib", "ref"):
-        continue
-    if not file.is_dir():
-        continue
-    projects.append(file.name)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--project", choices=projects)
-    parser.add_argument("-a", "--action", choices=["export", "image"])
+def parse_args(parser = argparse.ArgumentParser()):
+    parser.add_argument("-p", "--project", required=True)
+    parser.add_argument("-a", "--action", required=True, choices=["export", "image"])
     return parser.parse_args()
 
-def action_export(args):
-    r_path = (ROOT / args.project / "export")
-    w_path = (ROOT / args.project / "STLs")
-    for file in r_path.iterdir():
-        cmd = f"openscad -o {str(w_path / file.stem) + '.stl'} --export-format binstl {r_path / file.name}"
+def run_cmd(cmd, show=True):
+    if show:
         print(f"Running '{cmd}'")
-        os.system(cmd)
-
-def action_image(args):
-    path  = (ROOT / args.project)
-    cmd = f"openscad -o {path / 'demo.png'} --colorscheme Starnight {path / 'demo.scad'}"
-    print(f"Running '{cmd}'")
     os.system(cmd)
 
-def process_args(args):
-    if args.action == "export":
-        action_export(args)
-    elif args.action == "image":
-        action_image(args)
+def action_export(path):
+    r_path = (path / "export")
+    w_path = (path / "STLs")
+    for file in r_path.iterdir():
+        run_cmd(f"openscad -o {str(w_path / file.stem) + '.stl'} --export-format binstl {r_path / file.name}")
+
+def action_image(path):
+    run_cmd(f"openscad -o {path / 'demo.png'} --colorscheme Starnight {path / 'demo.scad'}")
 
 def main():
-    args = parse_args()
-    if args.project == "all":
-        for project in projects[1:]:
-            args.project = project
-            process_args(args)
+    parser = argparse.ArgumentParser()
+    args = parse_args(parser)
+    ROOT = subprocess.getoutput("git rev-parse --show-toplevel")
+    if "fatal:" in ROOT:
+        ROOT = pathlib.Path(__file__).parent.parent
     else:
-        process_args(args)
+        ROOT = pathlib.Path(ROOT)
+
+    projects = args.project.split(",")
+    for prj in projects:
+        path = (ROOT / prj)
+        print(f"Starting {args.action} on {path}")
+        if args.action == "export":
+            action_export(path)
+        elif args.action == "image":
+            action_image(path)
 
 
 if __name__ == "__main__":
