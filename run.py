@@ -28,7 +28,7 @@ def action_image(path):
             continue
         print(f"Checking {file} ({file.name})")
         if file.name.startswith("demo") and file.name.endswith(".scad"):
-            run_cmd(f"openscad -o {w_path / f'{file.stem}.png'} --colorscheme Starnight {path / file.name}")
+            run_cmd(f"openscad -o {w_path / f'{file.stem}.png'} --colorscheme Starnight --projection o {path / file.name}")
 
 def main():
     parser = argparse.ArgumentParser()
