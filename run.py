@@ -16,11 +16,19 @@ def run_cmd(cmd, show=True):
 def action_export(path):
     r_path = (path / "export")
     w_path = (path / "STLs")
+    w_path.mkdir(exist_ok=True)
     for file in r_path.iterdir():
         run_cmd(f"openscad -o {str(w_path / file.stem) + '.stl'} --export-format binstl {r_path / file.name}")
 
 def action_image(path):
-    run_cmd(f"openscad -o {path / 'demo.png'} --colorscheme Starnight {path / 'demo.scad'}")
+    w_path = (path / "media")
+    w_path.mkdir(exist_ok=True)
+    for file in path.iterdir():
+        if file.is_dir():
+            continue
+        print(f"Checking {file} ({file.name})")
+        if file.name.startswith("demo") and file.name.endswith(".scad"):
+            run_cmd(f"openscad -o {w_path / f'{file.stem}.png'} --colorscheme Starnight {path / file.name}")
 
 def main():
     parser = argparse.ArgumentParser()
